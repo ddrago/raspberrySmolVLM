@@ -103,20 +103,29 @@ if __name__ == "__main__":
     continuos = False
 
     if not image_path:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
         image_path = ".image.png"
         continuos = True
+
+    # Check if the camera opened successfully
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        exit()
+
 
     while True:
         if continuos:
             print("Press Enter to capture the frame or q and Enter to quit...")
             user_input = input().strip().lower()
             if user_input == '':
-                ret, frame = cap.read()
-                if not ret:
-                    print("Cam read error")
+                os.system(f"libcamera-jpeg -o {image_path} --width 640 --height 480 --nopreview")
+                frame = cv2.imread(image_path)
+                if frame is None:
+                    print("Failed to load captured image")
+
                 cv2.imwrite(image_path, frame)
                 print(f"Image captured and saved to {image_path}")
+                
             elif user_input == 'q':
                 print("Quitting...")
                 cap.release()
