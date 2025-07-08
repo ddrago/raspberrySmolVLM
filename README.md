@@ -1,4 +1,136 @@
-# SmolVLM inference example with sockets
+# RaspberrySmolVLM
+This project was adapted from Hardware.ai's video on the topic to work with ZeroCam. It provides detailed setup and instruction manuals.
+
+## SETUP & START MANUAL
+
+1. On your laptop, in a bash terminal we’ll call T1, clone this modified llama.cpp repo: https://github.com/ddrago/raspberrySmolVLM.git
+2. cd into the repo
+    
+    ```bash
+    cd raspberrySmolVLM
+    ```
+    
+3. create an environment using either conda, python, or python3:
+    
+    ```bash
+    conda create -n torch python=3.9
+    conda activate torch
+    ```
+    
+4. Install the various requirements found in the requirements folder:
+    
+    ```bash
+    pip install -r requirements/requirements-convert_hf_to_gguf.txt
+    ```
+    
+5. Again on your laptop, on a different terminal we’ll call T2, in the same folder as raspberrySmolVLM, clone the [smallest SmolVLM](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct) using GitHub:
+    
+    ```bash
+    git lfs install
+    git clone https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct
+    ```
+    
+6. Back on T1, navigate back to your raspberrySmolVLM local repo, and execute this command in order to generate the file SmolVLM-256M-Instruct-F16.gguf:
+    
+    ```bash
+    python convert_hf_to_gguf.py ../path/to/SmolVLM
+    ```
+    
+    If you cloned the SmolVLM model in the folder containing our repo, and did not change the name of its folder, the command will look like this:
+    
+    ```bash
+    python convert_hf_to_gguf.py ../SmolVLM-256M-Instruct
+    ```
+    
+    You can find the file in the SmolVLM-256M-Instruct repo. 
+    
+7. Setup and ssh into your raspberry pi:
+8. Clone in your raspberry pi terminal, T3, 
+    
+    ```bash
+    git clone https://github.com/ddrago/raspberrySmolVLM.git
+    cd raspberrySmolVLM
+    ```
+    
+9. Copy in your raspberrySmolVLM/models folder present on your rPi the SmolVLM-256M-Instruct-F16.gguf. You can use scp or simply opening the repo via ssh-enabled VSCode and dragging in the file.
+10. Check if you have cmake: 
+    1. Run:
+        
+        ```bash
+        cmake --version
+        ```
+        
+    2. If cmake is not recognised, install it:
+        
+        ```bash
+        sudo apt install cmake
+        ```
+        
+11. Configure cmake:
+    
+    ```bash
+    cmake -B build .
+    ```
+    
+12. Build the vision-socket application:
+    
+    ```bash
+    cmake --build build -j4 --target llama-vision-socket
+    ```
+    
+13. Activate the input-listening server:
+    
+    ```bash
+    ./build/bin/llama-vision-socket --model ./models/SmolVLM-256M-Instruct-F16.gguf
+    ```
+    
+14. In a final terminal, T4, still ssh connected to the raspberryPi, navigate to the raspberrySmolVLM/example/vision folder, make a venv, activate it, and install opencv-python:
+    
+    ```bash
+    cd raspberrySmolVLM/examples/vision/
+    python -m venv venv
+    source venv/bin/activate
+    pip install opencv-python piper-tts
+    ```
+    
+15. Then run the camera-controlling application:
+    
+    ```bash
+    python vision_client.py --n_predict 32 --use_tts
+    ```
+    
+16. Now you’ll be able to take pictures and receive a short description continuously with your raspberryPi by pressing enter on your laptop! 
+
+## INSTRUCTION MANUAL
+
+1. Ssh connect to your raspberry pi from your VSCode bash terminal
+2. Activate two terminals that are ssh connected, T-A and T-B
+3. In T-A, start the socket application:
+    
+    ```bash
+    cd path/to/raspberrySmolVLM
+    ./build/bin/llama-vision-socket --model ./models/SmolVLM-256M-Instruct-F16.gguf
+    ```
+    
+4. While the socket is open, in T-B, open the necessary environment and start the application:
+    
+    ```bash
+    cd raspberrySmolVLM/examples/vision/
+    source venv/bin/activate
+    python vision_client.py --n_predict 32 --use_tts
+    ```
+    
+
+## PROBLEMS
+
+1. tts is not working
+2. When I try to print the model’s output, it doesn’t actually ever print the whole thing! 
+
+```python
+print(response["result"]["text"])
+```
+
+## SmolVLM inference example with sockets
 
 Compile and run the server: 
 ```
@@ -32,7 +164,7 @@ For video step-by-step guide, watch the video below:
 And remember - this is Work in Progress based on Work in Progress! Things might break, be ready to debug them.
 Below is the original README.
 
-# llama.cpp
+## llama.cpp
 
 ![llama](https://user-images.githubusercontent.com/1991296/230134379-7181e485-c521-4d23-a0d6-f7b3b61ba524.png)
 
@@ -43,12 +175,12 @@ Below is the original README.
 
 Inference of Meta's [LLaMA](https://arxiv.org/abs/2302.13971) model (and others) in pure C/C++
 
-## Recent API changes
+### Recent API changes
 
 - [Changelog for `libllama` API](https://github.com/ggerganov/llama.cpp/issues/9289)
 - [Changelog for `llama-server` REST API](https://github.com/ggerganov/llama.cpp/issues/9291)
 
-## Hot topics
+### Hot topics
 
 - **Introducing GGUF-my-LoRA** https://github.com/ggerganov/llama.cpp/discussions/10123
 - Hugging Face Inference Endpoints now support GGUF out of the box! https://github.com/ggerganov/llama.cpp/discussions/9669
@@ -56,7 +188,7 @@ Inference of Meta's [LLaMA](https://arxiv.org/abs/2302.13971) model (and others)
 
 ----
 
-## Description
+### Description
 
 The main goal of `llama.cpp` is to enable LLM inference with minimal setup and state-of-the-art performance on a wide
 range of hardware - locally and in the cloud.
@@ -249,7 +381,7 @@ Instructions for adding support for new models: [HOWTO-add-model.md](docs/develo
 
 </details>
 
-## Supported backends
+### Supported backends
 
 | Backend | Target devices |
 | --- | --- |
@@ -263,7 +395,7 @@ Instructions for adding support for new models: [HOWTO-add-model.md](docs/develo
 | [Vulkan](docs/build.md#vulkan) | GPU |
 | [CANN](docs/build.md#cann) | Ascend NPU |
 
-## Building the project
+### Building the project
 
 The main product of this project is the `llama` library. Its C-style interface can be found in [include/llama.h](include/llama.h).
 The project also includes many example programs and tools using the `llama` library. The examples range from simple, minimal code snippets to sophisticated sub-projects such as an OpenAI-compatible HTTP server. Possible methods for obtaining the binaries:
@@ -273,7 +405,7 @@ The project also includes many example programs and tools using the `llama` libr
 - Use a Docker image, see [documentation for Docker](docs/docker.md)
 - Download pre-built binaries from [releases](https://github.com/ggerganov/llama.cpp/releases)
 
-## Obtaining and quantizing models
+### Obtaining and quantizing models
 
 The [Hugging Face](https://huggingface.co) platform hosts a [number of LLMs](https://huggingface.co/models?library=gguf&sort=trending) compatible with `llama.cpp`:
 
@@ -295,7 +427,7 @@ The Hugging Face platform provides a variety of online tools for converting, qua
 
 To learn more about model quantization, [read this documentation](examples/quantize/README.md)
 
-## [`llama-cli`](examples/main)
+### [`llama-cli`](examples/main)
 
 #### A CLI tool for accessing and experimenting with most of `llama.cpp`'s functionality.
 
@@ -358,7 +490,7 @@ To learn more about model quantization, [read this documentation](examples/quant
     </details>
 
 
-## [`llama-server`](examples/server)
+### [`llama-server`](examples/server)
 
 #### A lightweight, [OpenAI API](https://github.com/openai/openai-openapi) compatible, HTTP server for serving LLMs.
 
@@ -428,7 +560,7 @@ To learn more about model quantization, [read this documentation](examples/quant
     </details>
 
 
-## [`llama-perplexity`](examples/perplexity)
+### [`llama-perplexity`](examples/perplexity)
 
 #### A tool for measuring the perplexity [^1][^2] (and other quality metrics) of a model over a given text.
 
@@ -456,7 +588,7 @@ To learn more about model quantization, [read this documentation](examples/quant
 [^1]: [examples/perplexity/README.md](examples/perplexity/README.md)
 [^2]: [https://huggingface.co/docs/transformers/perplexity](https://huggingface.co/docs/transformers/perplexity)
 
-## [`llama-bench`](examples/llama-bench)
+### [`llama-bench`](examples/llama-bench)
 
 #### Benchmark the performance of the inference for various parameters.
 
@@ -477,7 +609,7 @@ To learn more about model quantization, [read this documentation](examples/quant
 
     </details>
 
-## [`llama-run`](examples/run)
+### [`llama-run`](examples/run)
 
 #### A comprehensive example for running `llama.cpp` models. Useful for inferencing. Used with RamaLama [^3].
 
@@ -492,7 +624,7 @@ To learn more about model quantization, [read this documentation](examples/quant
 
 [^3]: [RamaLama](https://github.com/containers/ramalama)
 
-## [`llama-simple`](examples/simple)
+### [`llama-simple`](examples/simple)
 
 #### A minimal example for implementing apps with `llama.cpp`. Useful for developers.
 
@@ -508,7 +640,7 @@ To learn more about model quantization, [read this documentation](examples/quant
     </details>
 
 
-## Contributing
+### Contributing
 
 - Contributors can open PRs
 - Collaborators can push to branches in the `llama.cpp` repo and merge PRs into the `master` branch
@@ -519,7 +651,7 @@ To learn more about model quantization, [read this documentation](examples/quant
 - Make sure to read this: [Inference at the edge](https://github.com/ggerganov/llama.cpp/discussions/205)
 - A bit of backstory for those who are interested: [Changelog podcast](https://changelog.com/podcast/532)
 
-## Other documentation
+### Other documentation
 
 - [main (cli)](examples/main/README.md)
 - [server](examples/server/README.md)
